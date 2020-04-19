@@ -20,35 +20,59 @@ def display_board(board)
   puts " #{board[6]} | #{board[7]} | #{board[8]} "
 end
 
-def input_to_index(user_input)
-  user_input.to_i - 1
+def input_to_index(input)
+  index = input.to_i - 1
+end
+
+def turn(board)
+  puts "Where would you like to move?"
+  input = gets.strip
+  position = input_to_index(input)
+  if valid_move?(board,position)
+    player_token = current_player(board)
+    move(board, position, player_token)
+  else
+    puts "Invalid move."
+    turn(board)
+  end
+end
+
+def move(board, position, player_token)
+  board[position] = player_token
+end
+
+def position_taken?(board, position)
+  !(board[position] == nil || board[position] == " ")
+end
+
+def valid_move?(board, position)
+  !position_taken?(board, position) && position <= 8 && position >= 0
+end
+
+def turn_count(board)
+  (board.select {|i| i == "X" || i == "O"}).count
 end
 
 def current_player(board)
   if turn_count(board).even?
     "X"
-  elsif turn_count(board).odd?
+  else
     "O"
   end
 end
-def move(board, user_input, player_token)
-  board[user_input] = player_token
-end
-
-def position_taken?(board, index)
-  !(board[index].nil? || board[index] == " ")
-end
 
 def won?(board)
-  WIN_COMBINATIONS.detect do |winner| #[0, 1, 2]
-      board[winner[0]] == board[winner[1]] && board[winner[0]] == board[winner[2]] && position_taken?(board, winner[0])
+  if WIN_COMBINATIONS.any? {|i| i.all?{|j| board[j] == "X"}}
+    true
+  elsif WIN_COMBINATIONS.any? {|i| i.all?{|j| board[j] == "O"}}
+    true
+  else
+    false
   end
 end
 
 def full?(board)
-  board.all? do |board_position|
-    board_position == "X" || board_position == "O"
-  end
+  turn_count(board) == 9
 end
 
 def draw?(board)
@@ -56,48 +80,30 @@ def draw?(board)
 end
 
 def over?(board)
-  draw?(board) || (won?(board) && full?(board)) || (won?(board) && !full?(board))
+  full?(board) || won?(board)
 end
 
 def winner(board)
-  if won?(board)
-    board[won?(board)[0]]
-  end
-end
-
-def valid_move?(board, index)
-  !position_taken?(board, index) && index.between?(0,8)
-end
-
-def turn(board)
-  puts "Please enter 1-9:"
-  user_input = gets.strip
-  index = input_to_index(user_input)
-  if valid_move?(board, index)
-    move(board, index, current_player(board))
-    display_board(board)
+  if WIN_COMBINATIONS.any? {|i| i.all?{|j| board[j] == "X"}}
+    "X"
+  elsif WIN_COMBINATIONS.any? {|i| i.all?{|j| board[j] == "O"}}
+    "O"
   else
-    turn(board)
+    nil
   end
-end
-
-def turn_count(board)
-  counter = 0
-  board.each do |occupied|
-    if occupied == "X" || occupied == "O"
-      counter += 1
-    end
-  end
-  counter
 end
 
 def play(board)
   until over?(board)
-    turn(board)
+    if !draw?(board)
+      turn(board)
+    end
   end
-  if draw?(board)
-    puts "Cat's Game!"
-  elsif won?(board)
+  if won?(board)
     puts "Congratulations #{winner(board)}!"
+  elsif draw?(board)
+    puts "Cat's Game!"
+  else
+    puts "I think I screwed up somehwere..."
   end
 end
